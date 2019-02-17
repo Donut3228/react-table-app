@@ -104,7 +104,7 @@ class App extends Component {
       filterValue: '',
       filteredItems: []
     }
-    axios.get('http://localhost:3000/data.json').then(res => {
+    axios.get('https://donut-react-table-app.herokuapp.com/data.json').then(res => {
       const items = res.data.map(item => item);
       this.setState({
         items: items,
