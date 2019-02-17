@@ -1,20 +1,32 @@
 import React, { Component, Fragment } from 'react';
-import logo from './logo.svg';
-import './App.css';
 import axios from 'axios';
+
+import './App.css';
+
+import filterObj from './filterFunctions'
 import up from './soft-up.svg';
 import down from './soft-down.svg';
-
+// import logo from './logo.svg';
 
 class Header extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      keys: ['ID', 'First Name', 'Last Name', 'E-Mail', 'Phone'],
-    }
+      keys: ['id', 'firstName', 'lastName', 'email', 'phone'],
+    };
   }
+
+  componentDidUpdate() {
+  
+  }
+
   render() {
-    var header = this.state.keys.map(item => <div className='header-item'>{item} <img src={up} className='up-arrow' alt='up-arrow' /></div>)
+    var header = this.state.keys.map(item =>
+      <div className='header-item'>
+        {item} <img onClick={() => this.props.sortHandler(item)}
+        src={item !== this.props.sortColumn ? down : this.props.sortDirection ? up : down}
+         className='up-arrow' alt='up-arrow' />
+      </div>)
     return (
       <>
         {header}
@@ -69,11 +81,15 @@ class Rows extends React.Component {
   }
 
   render() {
-    const rows = this.props.items.map(item => <Row item={item}/>);
+    const rows = this.props.items.map(item => <Row item={item} />);
     return (
       <>{rows}</>
     )
   }
+}
+
+class Pagination extends Component {
+
 }
 
 
@@ -82,25 +98,82 @@ class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      items: []
+      items: [],
+      sortСol: '',
+      sortDirection: true, // true === 'ASC' && false === 'DESC'
+      filterValue: '',
+      filteredItems: []
     }
     axios.get('http://localhost:3000/data.json').then(res => {
       const items = res.data.map(item => item);
       this.setState({
         items: items,
+        filteredItems: items
       })
     });
+    this.sortHandler = this.sortHandler.bind(this);
+    this.submitHandler = this.submitHandler.bind(this);
+    this.filterChangeHandler = this.filterChangeHandler.bind(this);
+  }
+
+  componentDidUpdate() {
+    // console.log(this.state.filterValue);
+    console.log(this.state.filteredItems);
+  }
+  
+
+  filterChangeHandler(event) {
+    this.setState({
+      filterValue: event.target.value
+    })
+  }
+
+  submitHandler() {
+    this.setState({
+      filteredItems: filterObj(this.state.items, this.state.filterValue),
+      filterValue: ''
+    })
+  }
+
+  sortHandler(sortColumn) {
+    if (sortColumn !== this.state.sortCol) {
+      // sorting new column
+      this.setState({
+        sortCol: sortColumn,
+        sortDirection: true,
+        filteredItems: typeof this.state.filteredItems[0][sortColumn] === 'number' 
+        ? this.state.filteredItems.sort((a, b) => a[sortColumn] - b[sortColumn]) 
+        : this.state.filteredItems.sort((a, b) => a[sortColumn].localeCompare(b[sortColumn]))
+      })
+    } else {
+      // sorting same column in reverse order
+      this.setState({
+        sortDirection: !this.state.sortDirection,
+        filteredItems: typeof this.state.filteredItems[0][sortColumn] === 'number'
+          ? !this.state.sortDirection ? this.state.filteredItems.sort((a, b) => a[sortColumn] - b[sortColumn]) 
+          : this.state.filteredItems.sort((a, b) => b[sortColumn] - a[sortColumn]) 
+          : !this.state.sortDirection ? this.state.filteredItems.sort((a, b) => a[sortColumn].localeCompare(b[sortColumn]))
+          : this.state.filteredItems.sort((a, b) => b[sortColumn].localeCompare(a[sortColumn]))
+      })
+    }
   }
 
   render() {
     return (
       <div className='wrapper'>
-        <div className='header-grid'><Header /></div>
-        <Rows items={this.state.items} />
+        <div className='filter-input'>
+          <input placeholder='type something to search' value={this.state.filterValue} onChange={this.filterChangeHandler}></input>
+          <button onClick={this.submitHandler}>Search</button>
+        </div>
+        <div className='header-grid'><Header sortHandler={this.sortHandler} 
+        sortColumn={this.state.sortCol} sortDirection={this.state.sortDirection}/></div>
+        <Rows items={this.state.filteredItems} />
+        {/* <Pagination /> */}
       </div>
     );
   }
 }
 
 
+// export default connect()(App); 
 export default App;
