@@ -31,6 +31,11 @@ body {
   grid-template-columns: 1fr 2fr 2fr 3fr 2fr;
 }
 
+.item-grid:hover {
+  background-color: silver;
+  opacity: 5%;
+}
+
 .item-wrapper {
   display: grid;
   grid-template-columns: 1fr;
@@ -39,6 +44,7 @@ body {
 .header-grid {
   display: grid;
   grid-template-columns: 1fr 2fr 2fr 3fr 2fr;
+  background-color: darkgrey;
 }
 
 .details-close {
@@ -56,4 +62,14 @@ body {
 
 .up-arrow {
   width: 1em;
+}
+
+
+li {
+  display: inline;
+  padding-inline-start: 10px;
+}
+
+.curPage {
+  font-size: 40px;
 }

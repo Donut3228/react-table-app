@@ -73,23 +73,52 @@ class Row extends React.Component {
   }
 }
 
-class Rows extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-    }
-  }
 
-  render() {
-    const rows = this.props.items.map(item => <Row item={item} />);
-    return (
-      <>{rows}</>
-    )
-  }
+function Rows(props) {
+  return (
+    props.items.map(item => <Row item={item} />)
+  )
 }
 
 class Pagination extends Component {
-
+  render() {
+    let pages = [];
+    let curPage = this.props.page;
+    let pagesAmount = this.props.pages;
+    for (let i = 1; i <= this.props.pages; i++) {
+      pages.push(<li>
+        <button className={curPage === i ? 'curPage' : 'notCurPage'} onClick={() => this.props.pageHandler(i)}>{i}</button>
+      </li>)
+    }
+    if (curPage <= 5) {
+      pages = pages.slice(0, 10)
+    } else {
+      if (curPage > 5 && curPage < pagesAmount - 5) {
+        pages = pages.slice(curPage - 5, curPage + 5)
+      } else {
+        pages = pages.slice(pagesAmount - 10)
+      }
+    }
+    return(
+      <ul>
+        {this.props.page !== 1 ? <li>
+        <button onClick={() => this.props.pageHandler('first')}>
+          first
+        </button>
+        <button onClick={() => this.props.pageHandler('prev')}>
+          prev
+        </button>
+        </li> : '' }
+        {pages}
+        {this.props.page !== this.props.pages ? <li>
+          <button onClick={() => this.props.pageHandler('next')}>next</button>
+          <button onClick={() => this.props.pageHandler('last')}>
+            last
+        </button>
+        </li> : '' }
+      </ul>
+    )
+  }
 }
 
 
@@ -102,23 +131,32 @@ class App extends Component {
       sortСol: '',
       sortDirection: true, // true === 'ASC' && false === 'DESC'
       filterValue: '',
-      filteredItems: []
+      filteredItems: [],
+      page: 1,
+      pages: 1,
+      renderItems: []
     }
-    axios.get('https://donut-react-table-app.herokuapp.com/data.json').then(res => {
+    axios.get(window.location + 'bigdata.json').then(res => {
       const items = res.data.map(item => item);
+      let pagesNum = Math.round(res.data.length / 50);
+      res.data.length % 50 === 0 ? pagesNum = pagesNum : pagesNum++
       this.setState({
         items: items,
-        filteredItems: items
+        filteredItems: items,
+        pages: pagesNum,
+        
       })
     });
     this.sortHandler = this.sortHandler.bind(this);
     this.submitHandler = this.submitHandler.bind(this);
     this.filterChangeHandler = this.filterChangeHandler.bind(this);
+    this.pageHandler = this.pageHandler.bind(this);
   }
 
   componentDidUpdate() {
     // console.log(this.state.filterValue);
     console.log(this.state.filteredItems);
+    console.log(this.state.items.length);
   }
   
 
@@ -126,6 +164,36 @@ class App extends Component {
     this.setState({
       filterValue: event.target.value
     })
+  }
+
+  pageHandler(pageNum) {
+    switch (pageNum) {
+      case 'prev':
+        this.setState({
+          page: this.state.page - 1
+        })
+        break;
+      case 'next':
+        this.setState({
+          page: this.state.page + 1,
+        })
+        break;
+      case 'first':
+        this.setState({
+          page: 1
+        })
+        break;
+      case 'last': 
+        this.setState({
+          page: this.state.pages
+        }) 
+        break;
+      default:
+        this.setState({
+          page: pageNum,
+        })
+    }
+    
   }
 
   submitHandler() {
@@ -165,10 +233,17 @@ class App extends Component {
           <input placeholder='type something to search' value={this.state.filterValue} onChange={this.filterChangeHandler}></input>
           <button onClick={this.submitHandler}>Search</button>
         </div>
+        <Pagination pages={this.state.pages} pageHandler={this.pageHandler} page={this.state.page} />
         <div className='header-grid'><Header sortHandler={this.sortHandler} 
         sortColumn={this.state.sortCol} sortDirection={this.state.sortDirection}/></div>
-        <Rows items={this.state.filteredItems} />
-        {/* <Pagination /> */}
+        <Rows items={this.state.filteredItems.slice(this.state.page * 50 - 50 , this.state.page * 50)} />
+        <div className='header-grid'><Header sortHandler={this.sortHandler}
+          sortColumn={this.state.sortCol} sortDirection={this.state.sortDirection} /></div>
+        <Pagination pages={this.state.pages} pageHandler={this.pageHandler} page={this.state.page} />
+        <div className='filter-input'>
+          <input placeholder='type something to search' value={this.state.filterValue} onChange={this.filterChangeHandler}></input>
+          <button onClick={this.submitHandler}>Search</button>
+        </div>
       </div>
     );
   }
